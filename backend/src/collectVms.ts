@@ -37,7 +37,7 @@ export async function collectVms(
 
   const familyMap = new Map<string, Map<string, VmSize[]>>();
 
-  for await (const sku of client.resourceSkus.list()) {
+  for await (const sku of client.resourceSkus.list({ filter: `location eq '${region}'` })) {
     if (sku.resourceType !== "virtualMachines") continue;
 
     const skuLocations = (sku.locations || []).map(normalizeLocation);

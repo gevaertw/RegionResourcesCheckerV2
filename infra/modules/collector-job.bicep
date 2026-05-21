@@ -46,10 +46,14 @@ resource collectorJob 'Microsoft.App/jobs@2024-03-01' = {
           name: 'collector'
           image: image
           resources: {
-            cpu: json('0.5')
-            memory: '1Gi'
+            cpu: json('1.0')
+            memory: '2Gi'
           }
           env: [
+            {
+              name: 'NODE_OPTIONS'
+              value: '--max-old-space-size=1536'
+            }
             {
               name: 'REGION'
               value: region
