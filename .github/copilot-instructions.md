@@ -1,6 +1,6 @@
 # Repository instructions for Azure Container Apps applications
 
-This repository is used to build and deploy a .NET application to Azure Container Apps using Bicep and Azure CLI.
+This repository is used to build and deploy a Node.js backend and a React frontend to Azure Container Apps using Bicep and Azure CLI.
 
 ## General engineering rules
 - Prefer simple, production-oriented solutions over clever ones.
@@ -12,25 +12,38 @@ This repository is used to build and deploy a .NET application to Azure Containe
 - When proposing commands, ensure they are copy-paste ready.
 - When modifying files, summarize exactly which files were created or changed.
 
-## Application rules
-- Prefer ASP.NET Core minimal APIs unless the prompt explicitly requires MVC or a worker service.
-- The application must be stateless and container-ready.
-- Add `/health` or equivalent health endpoint by default.
+## Backend rules
+- The backend is implemented in Node.js.
+- Prefer TypeScript unless the repository is already JavaScript-only.
+- Prefer Express or Fastify unless the repo already uses another framework.
+- Add a `/health` endpoint by default.
 - Add structured logging.
 - Respect configuration via environment variables.
 - Do not assume local filesystem persistence.
+- The backend must be stateless and container-ready.
+- Prefer Linux containers.
+
+## Frontend rules
+- The frontend is implemented in React.
+- Prefer TypeScript unless the repository is already JavaScript-only.
+- Prefer Vite unless the repo already uses another build tool.
+- Build the frontend as a production artifact.
+- Do not embed secrets in frontend code.
+- All backend URLs and runtime-specific values must be configurable.
+- The frontend must be container-ready for Azure Container Apps.
 - Prefer Linux containers.
 
 ## Container rules
-- Always produce a Dockerfile for the app.
+- Always produce a Dockerfile for each deployable app.
 - Prefer multi-stage Docker builds.
 - Expose the correct port and keep it aligned with the Container Apps ingress target port.
-- Prefer `mcr.microsoft.com/dotnet/aspnet` and `mcr.microsoft.com/dotnet/sdk` images unless explicitly told otherwise.
+- For frontend containers, prefer a small production-serving image.
+- For backend containers, prefer a production node runtime image.
 
 ## Infrastructure rules
 - Use Bicep for Azure infrastructure.
 - Prefer Azure Container Apps over AKS or App Service unless explicitly told otherwise.
-- Prefer one Container Apps managed environment per workload boundary unless the prompt says otherwise.
+- Prefer one Azure Container Apps managed environment shared by frontend and backend unless the prompt says otherwise.
 - Include Log Analytics integration for the managed environment.
 - Prefer system-assigned managed identity by default unless the prompt explicitly asks for user-assigned identity.
 - Use parameters for names, locations, image names, revisions, environment-specific values, and secret references.
@@ -42,8 +55,10 @@ This repository is used to build and deploy a .NET application to Azure Containe
 - Prefer `az deployment group create` for Bicep deployment.
 - Prefer ACR for image storage.
 - Use managed identity or federated identity where possible.
-- Validate that the container app image reference matches the pushed image tag.
+- Validate that the frontend and backend image references match the pushed image tags.
 - Validate that ingress, target port, registry settings, and identity settings are coherent.
+- The frontend should be externally reachable by default.
+- The backend should be internal-only by default unless the prompt explicitly asks for public ingress.
 
 ## Output rules
 When implementing work, always structure your response as:

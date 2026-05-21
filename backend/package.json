@@ -1,0 +1,21 @@
+{
+  "name": "region-resources-checker-job",
+  "version": "1.0.0",
+  "description": "Container App Job - collects Azure resource provider availability per region",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "npx ts-node src/index.ts"
+  },
+  "dependencies": {
+    "@azure/identity": "^4.5.0",
+    "@azure/arm-resources": "^6.0.0",
+    "@azure/storage-blob": "^12.26.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "@types/node": "^20.17.0",
+    "ts-node": "^10.9.0"
+  }
+}

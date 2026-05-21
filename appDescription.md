@@ -34,8 +34,9 @@ GUI -> Middle Tier -> Storage
 
 # Security bounderies
 - The gui is accessible without any authentication, its a public site
-- The other components are not publicly available, the storage account does not have public endpoints, it only accepts connections from both container apps
+- The other components are not publicly available, the storage account does not have public endpoints, it only accepts connections from both container apps so use a vnet and private endpoints
 - Only use service principles for authentication against azure
+- You cannot use access kets or sas tokens on the storage account
 - All secrets are stored in a Premium keyvault 
 
 # Code Boundaries
@@ -48,3 +49,4 @@ GUI -> Middle Tier -> Storage
 - Make sure the application, both the infrastructure as the application can be deployed using a simple prompt
 - Make sure that if there are no infra changes, the infra deployment is not triggered, its a waste of time
 - Store all parameters required for deployment in a project parameters.json file, keep secrets in a secrets.json file
+- Container images are stored in a ACR

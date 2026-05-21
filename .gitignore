@@ -1,1 +1,7 @@
 secrets.json
+node_modules/
+dist/
+server-dist/
+*.js.map
+.env
+.infra-checksum
