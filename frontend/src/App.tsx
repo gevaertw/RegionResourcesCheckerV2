@@ -5,6 +5,18 @@ import ResourceTree from "./components/ResourceTree";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
 
+const FILTERED_NAMES = new Set(["operations", "locations", "usages"]);
+
+function filterTree(children: ResourceNode[]): ResourceNode[] {
+  return children
+    .filter((c) => !FILTERED_NAMES.has(c.name))
+    .map((c) => ({ ...c, children: filterTree(c.children) }));
+}
+
+function filterProviders(providers: ProviderNode[]): ProviderNode[] {
+  return providers.map((p) => ({ ...p, children: filterTree(p.children) }));
+}
+
 function hasAvailableDescendant(node: ResourceNode): boolean {
   if (node.available) return true;
   return node.children.some(hasAvailableDescendant);
@@ -242,7 +254,7 @@ export default function App() {
 
   const visibleProviders = useMemo(() => {
     if (!regionData) return [];
-    let providers = regionData.providers;
+    let providers = filterProviders(regionData.providers);
     if (showAvailableOnly) {
       providers = providers.filter(providerHasAvailable);
     }

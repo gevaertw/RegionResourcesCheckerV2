@@ -28,6 +28,14 @@ function insertIntoTree(
   }
 }
 
+const FILTERED_NAMES = new Set(["operations", "locations", "usages"]);
+
+function filterTree(children: ResourceNode[]): ResourceNode[] {
+  return children
+    .filter((c) => !FILTERED_NAMES.has(c.name))
+    .map((c) => ({ ...c, children: filterTree(c.children) }));
+}
+
 function sortTree(children: ResourceNode[]): void {
   children.sort((a, b) => a.name.localeCompare(b.name));
   for (const child of children) {
@@ -75,6 +83,7 @@ export async function collectProviders(
       }
     }
 
+    providerNode.children = filterTree(providerNode.children);
     sortTree(providerNode.children);
     providers.push(providerNode);
     providerCount++;
