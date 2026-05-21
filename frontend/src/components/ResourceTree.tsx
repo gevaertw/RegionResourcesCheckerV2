@@ -7,6 +7,8 @@ interface ResourceTreeProps {
   onTogglePath: (path: string) => void;
   showAvailableOnly: boolean;
   searchQuery: string;
+  searchFilterActive: boolean;
+  matchedPaths: Set<string>;
 }
 
 function hasAvailableDescendant(node: ResourceNode): boolean {
@@ -20,15 +22,28 @@ function providerIsAvailable(provider: ProviderNode): boolean {
 
 function highlightText(text: string, query: string): React.ReactNode {
   if (!query) return text;
-  const idx = text.toLowerCase().indexOf(query.toLowerCase());
-  if (idx === -1) return text;
+  const terms = query.split(/\s+/).filter(Boolean);
+  if (terms.length === 0) return text;
+
+  const escaped = terms.map((t) =>
+    t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+  );
+  const pattern = new RegExp(`(${escaped.join("|")})`, "gi");
+  const parts = text.split(pattern);
+  if (parts.length <= 1) return text;
+
+  const matchPattern = new RegExp(`^(?:${escaped.join("|")})$`, "i");
   return (
     <>
-      {text.substring(0, idx)}
-      <span className="highlight">
-        {text.substring(idx, idx + query.length)}
-      </span>
-      {text.substring(idx + query.length)}
+      {parts.map((part, i) =>
+        matchPattern.test(part) ? (
+          <span key={i} className="highlight">
+            {part}
+          </span>
+        ) : (
+          part
+        )
+      )}
     </>
   );
 }
@@ -39,14 +54,20 @@ export default function ResourceTree({
   onTogglePath,
   showAvailableOnly,
   searchQuery,
+  searchFilterActive,
+  matchedPaths,
 }: ResourceTreeProps) {
   if (providers.length === 0) {
     return <div className="empty-state">No resource providers to display.</div>;
   }
 
+  const filteredProviders = searchFilterActive
+    ? providers.filter((p) => matchedPaths.has(p.name))
+    : providers;
+
   return (
     <div className="tree-container">
-      {providers.map((provider) => {
+      {filteredProviders.map((provider) => {
         const path = provider.name;
         const expanded = isExpanded(path);
         const isLeaf = provider.children.length === 0;
@@ -68,11 +89,6 @@ export default function ResourceTree({
               >
                 {highlightText(provider.name, searchQuery)}
               </span>
-              <span
-                className={`provider-badge ${provider.registrationState === "Registered" ? "registered" : "not-registered"}`}
-              >
-                {provider.registrationState}
-              </span>
             </div>
             {expanded && !isLeaf && (
               <div className="tree-children">
@@ -80,6 +96,11 @@ export default function ResourceTree({
                   .filter(
                     (child) =>
                       !showAvailableOnly || hasAvailableDescendant(child)
+                  )
+                  .filter(
+                    (child) =>
+                      !searchFilterActive ||
+                      matchedPaths.has(`${path}/${child.name}`)
                   )
                   .map((child) => (
                     <TreeNode
@@ -90,6 +111,8 @@ export default function ResourceTree({
                       onTogglePath={onTogglePath}
                       showAvailableOnly={showAvailableOnly}
                       searchQuery={searchQuery}
+                      searchFilterActive={searchFilterActive}
+                      matchedPaths={matchedPaths}
                     />
                   ))}
               </div>

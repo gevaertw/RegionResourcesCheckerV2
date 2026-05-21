@@ -6,7 +6,6 @@ export interface ResourceNode {
 
 export interface ProviderNode {
   name: string;
-  registrationState: string;
   children: ResourceNode[];
 }
 

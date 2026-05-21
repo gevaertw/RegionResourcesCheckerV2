@@ -5,6 +5,18 @@ import ResourceTree from "./components/ResourceTree";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
 
+const FILTERED_NAMES = new Set(["operations", "locations", "usages"]);
+
+function filterTree(children: ResourceNode[]): ResourceNode[] {
+  return children
+    .filter((c) => !FILTERED_NAMES.has(c.name))
+    .map((c) => ({ ...c, children: filterTree(c.children) }));
+}
+
+function filterProviders(providers: ProviderNode[]): ProviderNode[] {
+  return providers.map((p) => ({ ...p, children: filterTree(p.children) }));
+}
+
 function hasAvailableDescendant(node: ResourceNode): boolean {
   if (node.available) return true;
   return node.children.some(hasAvailableDescendant);
@@ -37,33 +49,46 @@ function collectAllPaths(providers: ProviderNode[]): Set<string> {
 function findMatchingPaths(
   providers: ProviderNode[],
   query: string
-): Set<string> {
-  const matched = new Set<string>();
-  const q = query.toLowerCase();
+): { expandPaths: Set<string>; matchCount: number } {
+  const expandPaths = new Set<string>();
+  let matchCount = 0;
+  const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
+  if (terms.length === 0) return { expandPaths, matchCount: 0 };
 
-  function walk(children: ResourceNode[], parentPath: string) {
+  function walk(
+    children: ResourceNode[],
+    treePath: string,
+    displayPath: string
+  ) {
     for (const child of children) {
-      const childPath = `${parentPath}/${child.name}`;
-      if (child.name.toLowerCase().includes(q)) {
-        const segments = childPath.split("/");
-        let path = segments[0];
-        matched.add(path);
+      const childTreePath = `${treePath}/${child.name}`;
+      const childDisplayPath = `${displayPath}/${child.name}`;
+
+      if (
+        terms.every((term) => childDisplayPath.toLowerCase().includes(term))
+      ) {
+        matchCount++;
+        const segments = childTreePath.split("/");
+        let p = segments[0];
+        expandPaths.add(p);
         for (let i = 1; i < segments.length; i++) {
-          path += `/${segments[i]}`;
-          matched.add(path);
+          p += `/${segments[i]}`;
+          expandPaths.add(p);
         }
       }
-      walk(child.children, childPath);
+      walk(child.children, childTreePath, childDisplayPath);
     }
   }
 
   for (const prov of providers) {
-    if (prov.name.toLowerCase().includes(q)) {
-      matched.add(prov.name);
+    if (terms.every((term) => prov.name.toLowerCase().includes(term))) {
+      matchCount++;
+      expandPaths.add(prov.name);
     }
-    walk(prov.children, prov.name);
+    walk(prov.children, prov.name, prov.name);
   }
-  return matched;
+
+  return { expandPaths, matchCount };
 }
 
 export default function App() {
@@ -73,8 +98,17 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [showAvailableOnly, setShowAvailableOnly] = useState(false);
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [showAvailableOnly, setShowAvailableOnly] = useState(true);
   const [expandedPaths, setExpandedPaths] = useState<Set<string>>(new Set());
+  const [searchFilterActive, setSearchFilterActive] = useState(false);
+
+  // Debounce search input by 300ms
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(searchQuery), 300);
+    setSearchFilterActive(false);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   useEffect(() => {
     fetch(`${API_BASE}/api/regions`)
@@ -93,6 +127,8 @@ export default function App() {
     setRegionData(null);
     setExpandedPaths(new Set());
     setSearchQuery("");
+    setDebouncedQuery("");
+    setSearchFilterActive(false);
 
     fetch(`${API_BASE}/api/regions/${encodeURIComponent(selectedRegion)}`)
       .then((res) => {
@@ -101,6 +137,12 @@ export default function App() {
       })
       .then((data: RegionData) => {
         setRegionData(data);
+        // Default view: expand 1 level (provider names)
+        const level0 = new Set<string>();
+        for (const prov of data.providers) {
+          if (prov.children.length > 0) level0.add(prov.name);
+        }
+        setExpandedPaths(level0);
         setLoading(false);
       })
       .catch((err) => {
@@ -109,10 +151,15 @@ export default function App() {
       });
   }, [selectedRegion]);
 
-  const searchExpanded = useMemo(() => {
-    if (!regionData || !searchQuery.trim()) return new Set<string>();
-    return findMatchingPaths(regionData.providers, searchQuery.trim());
-  }, [searchQuery, regionData]);
+  const { searchExpanded, matchCount } = useMemo(() => {
+    if (!regionData || !debouncedQuery.trim())
+      return { searchExpanded: new Set<string>(), matchCount: 0 };
+    const result = findMatchingPaths(
+      regionData.providers,
+      debouncedQuery.trim()
+    );
+    return { searchExpanded: result.expandPaths, matchCount: result.matchCount };
+  }, [debouncedQuery, regionData]);
 
   const isExpanded = useCallback(
     (path: string) => expandedPaths.has(path) || searchExpanded.has(path),
@@ -128,6 +175,39 @@ export default function App() {
     });
   }, []);
 
+  const expandOneLevel = useCallback(() => {
+    if (!regionData) return;
+    setExpandedPaths((prev) => {
+      const next = new Set(prev);
+      const allByDepth: string[][] = [];
+      function walk(children: ResourceNode[], parent: string, depth: number) {
+        for (const child of children) {
+          const p = `${parent}/${child.name}`;
+          if (child.children.length > 0) {
+            if (!allByDepth[depth]) allByDepth[depth] = [];
+            allByDepth[depth].push(p);
+            walk(child.children, p, depth + 1);
+          }
+        }
+      }
+      for (const prov of regionData.providers) {
+        if (prov.children.length > 0) {
+          if (!allByDepth[0]) allByDepth[0] = [];
+          allByDepth[0].push(prov.name);
+          walk(prov.children, prov.name, 1);
+        }
+      }
+      for (const paths of allByDepth) {
+        if (!paths) continue;
+        if (!paths.every((p) => next.has(p))) {
+          paths.forEach((p) => next.add(p));
+          return next;
+        }
+      }
+      return next;
+    });
+  }, [regionData]);
+
   const expandAll = useCallback(() => {
     if (!regionData) return;
     setExpandedPaths(collectAllPaths(regionData.providers));
@@ -137,17 +217,55 @@ export default function App() {
     setExpandedPaths(new Set());
   }, []);
 
+  const collapseOneLevel = useCallback(() => {
+    if (!regionData) return;
+    setExpandedPaths((prev) => {
+      const next = new Set(prev);
+      const allByDepth: string[][] = [];
+      function walk(children: ResourceNode[], parent: string, depth: number) {
+        for (const child of children) {
+          const p = `${parent}/${child.name}`;
+          if (child.children.length > 0) {
+            if (!allByDepth[depth]) allByDepth[depth] = [];
+            allByDepth[depth].push(p);
+            walk(child.children, p, depth + 1);
+          }
+        }
+      }
+      for (const prov of regionData.providers) {
+        if (prov.children.length > 0) {
+          if (!allByDepth[0]) allByDepth[0] = [];
+          allByDepth[0].push(prov.name);
+          walk(prov.children, prov.name, 1);
+        }
+      }
+      // Find deepest expanded depth and collapse it
+      for (let d = allByDepth.length - 1; d >= 0; d--) {
+        const paths = allByDepth[d];
+        if (!paths) continue;
+        if (paths.some((p) => next.has(p))) {
+          paths.forEach((p) => next.delete(p));
+          return next;
+        }
+      }
+      return next;
+    });
+  }, [regionData]);
+
   const visibleProviders = useMemo(() => {
     if (!regionData) return [];
-    let providers = regionData.providers;
+    let providers = filterProviders(regionData.providers);
     if (showAvailableOnly) {
       providers = providers.filter(providerHasAvailable);
     }
     return providers;
   }, [regionData, showAvailableOnly]);
 
+  const hasActiveSearch = debouncedQuery.trim().length > 0;
+  const noResults = hasActiveSearch && matchCount === 0 && regionData !== null;
+
   return (
-    <>
+    <div className="app-container">
       <Header
         regions={regions}
         selectedRegion={selectedRegion}
@@ -156,8 +274,14 @@ export default function App() {
         onSearchChange={setSearchQuery}
         showAvailableOnly={showAvailableOnly}
         onToggleAvailable={() => setShowAvailableOnly((v) => !v)}
+        onExpandOneLevel={expandOneLevel}
         onExpandAll={expandAll}
+        onCollapseOneLevel={collapseOneLevel}
         onCollapseAll={collapseAll}
+        matchCount={matchCount}
+        hasActiveSearch={hasActiveSearch}
+        searchFilterActive={searchFilterActive}
+        onToggleSearchFilter={() => setSearchFilterActive((v) => !v)}
       />
       {regionData && (
         <div className="status-bar">
@@ -177,15 +301,26 @@ export default function App() {
       {!loading && !error && !selectedRegion && (
         <div className="empty-state">Select a region to view resource providers.</div>
       )}
-      {!loading && !error && regionData && (
+      {!loading && !error && regionData && noResults && (
+        <div className="empty-state">
+          No results found for &ldquo;{debouncedQuery.trim()}&rdquo;
+        </div>
+      )}
+      {!loading && !error && regionData && !noResults && (
         <ResourceTree
           providers={visibleProviders}
           isExpanded={isExpanded}
           onTogglePath={togglePath}
           showAvailableOnly={showAvailableOnly}
-          searchQuery={searchQuery}
+          searchQuery={debouncedQuery}
+          searchFilterActive={searchFilterActive}
+          matchedPaths={searchExpanded}
         />
       )}
-    </>
+      <footer className="app-footer">
+        <div>Vibecoded with ❤️ and GitHub Copilot</div>
+        <div className="footer-note">This app only shows regional services. Global services like Front Door are not shown.</div>
+      </footer>
+    </div>
   );
 }

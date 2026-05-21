@@ -8,8 +8,14 @@ interface HeaderProps {
   onSearchChange: (query: string) => void;
   showAvailableOnly: boolean;
   onToggleAvailable: () => void;
+  onExpandOneLevel: () => void;
   onExpandAll: () => void;
+  onCollapseOneLevel: () => void;
   onCollapseAll: () => void;
+  matchCount: number;
+  hasActiveSearch: boolean;
+  searchFilterActive: boolean;
+  onToggleSearchFilter: () => void;
 }
 
 export default function Header({
@@ -20,8 +26,14 @@ export default function Header({
   onSearchChange,
   showAvailableOnly,
   onToggleAvailable,
+  onExpandOneLevel,
   onExpandAll,
+  onCollapseOneLevel,
   onCollapseAll,
+  matchCount,
+  hasActiveSearch,
+  searchFilterActive,
+  onToggleSearchFilter,
 }: HeaderProps) {
   return (
     <header className="app-header">
@@ -45,12 +57,38 @@ export default function Header({
           </select>
         </div>
         <div className="search-field">
-          <input
-            type="text"
-            placeholder="Search resource providers…"
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-          />
+          <div className="search-input-wrapper">
+            <span className="search-icon">&#128269;</span>
+            <input
+              type="text"
+              placeholder="Search resource providers…"
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+            />
+            {searchQuery && (
+              <button
+                className="search-clear"
+                onClick={() => onSearchChange("")}
+                aria-label="Clear search"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+          {hasActiveSearch && (
+            <span className="search-count">
+              {matchCount === 0
+                ? "No matches"
+                : `${matchCount} match${matchCount !== 1 ? "es" : ""}`}
+            </span>
+          )}
+          <button
+            className={`btn btn-filter${searchFilterActive ? " btn-filter-active" : ""}`}
+            onClick={onToggleSearchFilter}
+            disabled={!hasActiveSearch || matchCount === 0}
+          >
+            {searchFilterActive ? "Show All" : "Filter"}
+          </button>
         </div>
         <ToggleSwitch
           active={showAvailableOnly}
@@ -58,10 +96,16 @@ export default function Header({
           label="Available only"
         />
         <div className="btn-group">
-          <button className="btn" onClick={onExpandAll}>
+          <button className="btn btn-primary" onClick={onExpandAll}>
             Expand All
           </button>
-          <button className="btn" onClick={onCollapseAll}>
+          <button className="btn btn-outline" onClick={onExpandOneLevel}>
+            Expand 1 Level
+          </button>
+          <button className="btn btn-outline" onClick={onCollapseOneLevel}>
+            Collapse 1 Level
+          </button>
+          <button className="btn btn-outline" onClick={onCollapseAll}>
             Collapse All
           </button>
         </div>

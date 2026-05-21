@@ -7,6 +7,8 @@ interface TreeNodeProps {
   onTogglePath: (path: string) => void;
   showAvailableOnly: boolean;
   searchQuery: string;
+  searchFilterActive: boolean;
+  matchedPaths: Set<string>;
 }
 
 function hasAvailableDescendant(node: ResourceNode): boolean {
@@ -16,15 +18,28 @@ function hasAvailableDescendant(node: ResourceNode): boolean {
 
 function highlightText(text: string, query: string): React.ReactNode {
   if (!query) return text;
-  const idx = text.toLowerCase().indexOf(query.toLowerCase());
-  if (idx === -1) return text;
+  const terms = query.split(/\s+/).filter(Boolean);
+  if (terms.length === 0) return text;
+
+  const escaped = terms.map((t) =>
+    t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+  );
+  const pattern = new RegExp(`(${escaped.join("|")})`, "gi");
+  const parts = text.split(pattern);
+  if (parts.length <= 1) return text;
+
+  const matchPattern = new RegExp(`^(?:${escaped.join("|")})$`, "i");
   return (
     <>
-      {text.substring(0, idx)}
-      <span className="highlight">
-        {text.substring(idx, idx + query.length)}
-      </span>
-      {text.substring(idx + query.length)}
+      {parts.map((part, i) =>
+        matchPattern.test(part) ? (
+          <span key={i} className="highlight">
+            {part}
+          </span>
+        ) : (
+          part
+        )
+      )}
     </>
   );
 }
@@ -36,13 +51,21 @@ export default function TreeNode({
   onTogglePath,
   showAvailableOnly,
   searchQuery,
+  searchFilterActive,
+  matchedPaths,
 }: TreeNodeProps) {
   const expanded = isExpanded(path);
   const isLeaf = node.children.length === 0;
 
-  const visibleChildren = showAvailableOnly
+  let visibleChildren = showAvailableOnly
     ? node.children.filter(hasAvailableDescendant)
     : node.children;
+
+  if (searchFilterActive) {
+    visibleChildren = visibleChildren.filter((child) =>
+      matchedPaths.has(`${path}/${child.name}`)
+    );
+  }
 
   return (
     <div>
@@ -72,6 +95,8 @@ export default function TreeNode({
               onTogglePath={onTogglePath}
               showAvailableOnly={showAvailableOnly}
               searchQuery={searchQuery}
+              searchFilterActive={searchFilterActive}
+              matchedPaths={matchedPaths}
             />
           ))}
         </div>
