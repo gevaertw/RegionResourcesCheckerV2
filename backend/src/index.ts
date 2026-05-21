@@ -1,7 +1,8 @@
 import { DefaultAzureCredential } from "@azure/identity";
 import { loadConfig } from "./config";
 import { collectProviders } from "./collect";
-import { uploadRegionData } from "./upload";
+import { collectVms } from "./collectVms";
+import { uploadRegionData, uploadVmData } from "./upload";
 
 async function main(): Promise<void> {
   const startTime = Date.now();
@@ -31,6 +32,19 @@ async function main(): Promise<void> {
     regionData
   );
 
+  const vmData = await collectVms(
+    credential,
+    config.subscriptionId,
+    config.region
+  );
+
+  await uploadVmData(
+    credential,
+    config.storageAccountName,
+    config.vmContainerName,
+    vmData
+  );
+
   const durationMs = Date.now() - startTime;
   console.log(
     JSON.stringify({
@@ -38,6 +52,7 @@ async function main(): Promise<void> {
       msg: "Job completed successfully",
       region: config.region,
       providerCount: regionData.providers.length,
+      vmFamilyCount: vmData.families.length,
       durationMs,
     })
   );

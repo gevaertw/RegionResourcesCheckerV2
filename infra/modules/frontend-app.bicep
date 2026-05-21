@@ -7,6 +7,7 @@ param acrLoginServer string
 param image string
 param storageAccountName string
 param storageContainerName string
+param vmContainerName string = 'vmdata'
 param port int = 3000
 
 var appName = take('gui-${environmentName}', 32)
@@ -57,6 +58,10 @@ resource frontendApp 'Microsoft.App/containerApps@2024-03-01' = {
             {
               name: 'STORAGE_CONTAINER_NAME'
               value: storageContainerName
+            }
+            {
+              name: 'VM_CONTAINER_NAME'
+              value: vmContainerName
             }
             {
               name: 'AZURE_CLIENT_ID'

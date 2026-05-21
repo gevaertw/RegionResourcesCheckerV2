@@ -21,6 +21,9 @@ param jobImage string = 'mcr.microsoft.com/k8se/quickstart:latest'
 @description('Blob container name for region data')
 param storageContainerName string = 'regiondata'
 
+@description('Blob container name for VM SKU data')
+param vmContainerName string = 'vmdata'
+
 @description('Frontend container listen port')
 param frontendPort int = 3000
 
@@ -52,6 +55,7 @@ module storage 'modules/storage.bicep' = {
     peSubnetId: network.outputs.peSubnetId
     blobDnsZoneId: network.outputs.blobDnsZoneId
     containerName: storageContainerName
+    vmContainerName: vmContainerName
   }
 }
 
@@ -114,6 +118,7 @@ module frontendApp 'modules/frontend-app.bicep' = {
     image: frontendImage
     storageAccountName: storage.outputs.storageAccountName
     storageContainerName: storageContainerName
+    vmContainerName: vmContainerName
     port: frontendPort
   }
 }
@@ -131,6 +136,7 @@ module collectorJobs 'modules/collector-job.bicep' = [for region in regions: {
     region: region
     storageAccountName: storage.outputs.storageAccountName
     storageContainerName: storageContainerName
+    vmContainerName: vmContainerName
     subscriptionIdValue: subscription().subscriptionId
   }
 }]

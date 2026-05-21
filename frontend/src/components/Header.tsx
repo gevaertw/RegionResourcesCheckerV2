@@ -1,5 +1,7 @@
 import ToggleSwitch from "./ToggleSwitch";
 
+export type PageId = "resources" | "vms";
+
 interface HeaderProps {
   regions: string[];
   selectedRegion: string;
@@ -16,6 +18,9 @@ interface HeaderProps {
   hasActiveSearch: boolean;
   searchFilterActive: boolean;
   onToggleSearchFilter: () => void;
+  activePage: PageId;
+  onPageChange: (page: PageId) => void;
+  showToggle?: boolean;
 }
 
 export default function Header({
@@ -34,14 +39,38 @@ export default function Header({
   hasActiveSearch,
   searchFilterActive,
   onToggleSearchFilter,
+  activePage,
+  onPageChange,
+  showToggle = true,
 }: HeaderProps) {
+  const searchPlaceholder =
+    activePage === "resources"
+      ? "Search resource providers…"
+      : "Search VM families/sizes…";
+
   return (
     <header className="app-header">
       <div className="disclaimer">
         ⚠ This is <strong>not</strong> an official Microsoft page. Information
         is provided as-is and may not reflect the latest availability.
       </div>
-      <h1 className="app-title">Azure Region Resource Checker</h1>
+      <div className="header-title-row">
+        <h1 className="app-title">Azure Region Resource Checker</h1>
+        <div className="nav-tabs">
+          <button
+            className={`nav-tab${activePage === "resources" ? " nav-tab-active" : ""}`}
+            onClick={() => onPageChange("resources")}
+          >
+            Resources
+          </button>
+          <button
+            className={`nav-tab${activePage === "vms" ? " nav-tab-active" : ""}`}
+            onClick={() => onPageChange("vms")}
+          >
+            Virtual Machines
+          </button>
+        </div>
+      </div>
       <div className="header-controls">
         <div className="region-selector">
           <select
@@ -61,7 +90,7 @@ export default function Header({
             <span className="search-icon">&#128269;</span>
             <input
               type="text"
-              placeholder="Search resource providers…"
+              placeholder={searchPlaceholder}
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
             />
@@ -90,11 +119,13 @@ export default function Header({
             {searchFilterActive ? "Show All" : "Filter"}
           </button>
         </div>
-        <ToggleSwitch
-          active={showAvailableOnly}
-          onToggle={onToggleAvailable}
-          label="Available only"
-        />
+        {showToggle && (
+          <ToggleSwitch
+            active={showAvailableOnly}
+            onToggle={onToggleAvailable}
+            label="Available only"
+          />
+        )}
         <div className="btn-group">
           <button className="btn btn-primary" onClick={onExpandAll}>
             Expand All

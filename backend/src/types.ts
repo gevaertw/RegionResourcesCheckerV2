@@ -20,4 +20,32 @@ export interface AppConfig {
   subscriptionId: string;
   storageAccountName: string;
   storageContainerName: string;
+  vmContainerName: string;
+}
+
+export interface VmCapability {
+  name: string;
+  value: string;
+}
+
+export interface VmSize {
+  name: string;
+  zones: string[];
+  capabilities: VmCapability[];
+}
+
+export interface VmSubtype {
+  name: string;
+  sizes: VmSize[];
+}
+
+export interface VmFamily {
+  name: string;
+  subtypes: VmSubtype[];
+}
+
+export interface VmRegionData {
+  region: string;
+  timestamp: string;
+  families: VmFamily[];
 }

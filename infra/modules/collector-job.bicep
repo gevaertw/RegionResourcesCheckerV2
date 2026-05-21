@@ -8,6 +8,7 @@ param image string
 param region string
 param storageAccountName string
 param storageContainerName string
+param vmContainerName string = 'vmdata'
 param subscriptionIdValue string
 
 var jobName = take('col-${environmentName}-${region}', 32)
@@ -64,6 +65,10 @@ resource collectorJob 'Microsoft.App/jobs@2024-03-01' = {
             {
               name: 'STORAGE_CONTAINER_NAME'
               value: storageContainerName
+            }
+            {
+              name: 'VM_CONTAINER_NAME'
+              value: vmContainerName
             }
             {
               name: 'AZURE_CLIENT_ID'

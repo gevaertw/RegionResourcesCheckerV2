@@ -3,6 +3,7 @@ param location string
 param peSubnetId string
 param blobDnsZoneId string
 param containerName string = 'regiondata'
+param vmContainerName string = 'vmdata'
 
 var sanitizedName = toLower(replace(environmentName, '-', ''))
 var uniqueSuffix = uniqueString(resourceGroup().id)
@@ -35,6 +36,11 @@ resource blobService 'Microsoft.Storage/storageAccounts/blobServices@2023-05-01'
 resource blobContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-05-01' = {
   parent: blobService
   name: containerName
+}
+
+resource vmBlobContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-05-01' = {
+  parent: blobService
+  name: vmContainerName
 }
 
 resource privateEndpoint 'Microsoft.Network/privateEndpoints@2024-01-01' = {

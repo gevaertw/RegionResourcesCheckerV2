@@ -78,7 +78,51 @@ body {
   font-size: 20px;
   font-weight: 600;
   color: #ffffff;
+  margin-bottom: 0;
+}
+
+.header-title-row {
+  display: flex;
+  align-items: center;
+  gap: 24px;
   margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+/* -- Navigation tabs -- */
+.nav-tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.nav-tab {
+  padding: 6px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: var(--radius);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.9);
+  font-family: var(--font-family);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.nav-tab:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.7);
+}
+
+.nav-tab-active {
+  background: #ffffff;
+  color: var(--color-primary);
+  border-color: #ffffff;
+  font-weight: 600;
+}
+
+.nav-tab-active:hover {
+  background: rgba(255, 255, 255, 0.92);
 }
 
 .header-controls {
@@ -383,6 +427,93 @@ body {
   padding-left: 20px;
   border-left: 1px solid var(--color-border);
   margin-left: 9px;
+}
+
+/* -- VM table -- */
+.vm-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 4px 0;
+}
+
+.vm-th {
+  text-align: left;
+  padding: 6px 10px;
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  border-bottom: 2px solid var(--color-border);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.vm-row:nth-child(even) {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.vm-row:hover {
+  background: rgba(0, 120, 212, 0.04);
+}
+
+.vm-cell {
+  padding: 5px 10px;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: top;
+}
+
+.vm-cell-name {
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.vm-cell-zones {
+  white-space: nowrap;
+  color: var(--color-text-secondary);
+}
+
+.vm-capabilities {
+  font-size: 12px;
+  color: var(--color-text);
+}
+
+.vm-cap-item {
+  white-space: nowrap;
+}
+
+.vm-cap-toggle {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 0 4px;
+  margin-left: 4px;
+  text-decoration: underline;
+  font-family: var(--font-family);
+}
+
+.vm-cap-toggle:hover {
+  color: var(--color-primary-hover);
+}
+
+.vm-cap-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+
+.vm-cap-detail-item {
+  white-space: nowrap;
+}
+
+.vm-size-count {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin-left: 4px;
 }
 
 

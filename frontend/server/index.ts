@@ -25,6 +25,9 @@ const blobServiceClient = new BlobServiceClient(
 );
 const blobContainerClient = blobServiceClient.getContainerClient(containerName);
 
+const vmContainerName = process.env.VM_CONTAINER_NAME || "vmdata";
+const vmContainerClient = blobServiceClient.getContainerClient(vmContainerName);
+
 // Health endpoint
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
@@ -77,6 +80,56 @@ app.get("/api/regions/:region", async (req, res) => {
         JSON.stringify({ level: "error", msg: "Failed to get region data", region, error: String(err) })
       );
       res.status(500).json({ error: "Failed to get region data" });
+    }
+  }
+});
+
+// List available VM regions
+app.get("/api/vm/regions", async (_req, res) => {
+  try {
+    const regions: string[] = [];
+    for await (const blob of vmContainerClient.listBlobsFlat()) {
+      if (blob.name.endsWith(".json")) {
+        regions.push(blob.name.replace(/\.json$/, ""));
+      }
+    }
+    res.json(regions.sort());
+  } catch (err) {
+    console.error(
+      JSON.stringify({ level: "error", msg: "Failed to list VM regions", error: String(err) })
+    );
+    res.status(500).json({ error: "Failed to list VM regions" });
+  }
+});
+
+// Get VM data for a region
+app.get("/api/vm/:region", async (req, res) => {
+  const region = req.params.region;
+
+  if (!/^[a-z0-9]+$/i.test(region)) {
+    res.status(400).json({ error: "Invalid region name" });
+    return;
+  }
+
+  try {
+    const blobClient = vmContainerClient.getBlockBlobClient(`${region}.json`);
+    const download = await blobClient.download();
+
+    if (!download.readableStreamBody) {
+      res.status(404).json({ error: "VM data not found" });
+      return;
+    }
+
+    res.setHeader("Content-Type", "application/json");
+    download.readableStreamBody.pipe(res);
+  } catch (err: any) {
+    if (err.statusCode === 404) {
+      res.status(404).json({ error: "VM region not found" });
+    } else {
+      console.error(
+        JSON.stringify({ level: "error", msg: "Failed to get VM data", region, error: String(err) })
+      );
+      res.status(500).json({ error: "Failed to get VM data" });
     }
   }
 });

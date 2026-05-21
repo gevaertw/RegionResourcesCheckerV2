@@ -5,6 +5,7 @@ export function loadConfig(): AppConfig {
   const subscriptionId = process.env.AZURE_SUBSCRIPTION_ID;
   const storageAccountName = process.env.STORAGE_ACCOUNT_NAME;
   const storageContainerName = process.env.STORAGE_CONTAINER_NAME || "regiondata";
+  const vmContainerName = process.env.VM_CONTAINER_NAME || "vmdata";
 
   const missing: string[] = [];
   if (!region) missing.push("REGION");
@@ -20,5 +21,6 @@ export function loadConfig(): AppConfig {
     subscriptionId: subscriptionId!,
     storageAccountName: storageAccountName!,
     storageContainerName,
+    vmContainerName,
   };
 }
