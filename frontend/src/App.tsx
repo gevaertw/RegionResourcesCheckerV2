@@ -37,33 +37,46 @@ function collectAllPaths(providers: ProviderNode[]): Set<string> {
 function findMatchingPaths(
   providers: ProviderNode[],
   query: string
-): Set<string> {
-  const matched = new Set<string>();
-  const q = query.toLowerCase();
+): { expandPaths: Set<string>; matchCount: number } {
+  const expandPaths = new Set<string>();
+  let matchCount = 0;
+  const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
+  if (terms.length === 0) return { expandPaths, matchCount: 0 };
 
-  function walk(children: ResourceNode[], parentPath: string) {
+  function walk(
+    children: ResourceNode[],
+    treePath: string,
+    displayPath: string
+  ) {
     for (const child of children) {
-      const childPath = `${parentPath}/${child.name}`;
-      if (child.name.toLowerCase().includes(q)) {
-        const segments = childPath.split("/");
-        let path = segments[0];
-        matched.add(path);
+      const childTreePath = `${treePath}/${child.name}`;
+      const childDisplayPath = `${displayPath}/${child.name}`;
+
+      if (
+        terms.every((term) => childDisplayPath.toLowerCase().includes(term))
+      ) {
+        matchCount++;
+        const segments = childTreePath.split("/");
+        let p = segments[0];
+        expandPaths.add(p);
         for (let i = 1; i < segments.length; i++) {
-          path += `/${segments[i]}`;
-          matched.add(path);
+          p += `/${segments[i]}`;
+          expandPaths.add(p);
         }
       }
-      walk(child.children, childPath);
+      walk(child.children, childTreePath, childDisplayPath);
     }
   }
 
   for (const prov of providers) {
-    if (prov.name.toLowerCase().includes(q)) {
-      matched.add(prov.name);
+    if (terms.every((term) => prov.name.toLowerCase().includes(term))) {
+      matchCount++;
+      expandPaths.add(prov.name);
     }
-    walk(prov.children, prov.name);
+    walk(prov.children, prov.name, prov.name);
   }
-  return matched;
+
+  return { expandPaths, matchCount };
 }
 
 export default function App() {
@@ -73,8 +86,15 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [showAvailableOnly, setShowAvailableOnly] = useState(false);
   const [expandedPaths, setExpandedPaths] = useState<Set<string>>(new Set());
+
+  // Debounce search input by 300ms
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(searchQuery), 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   useEffect(() => {
     fetch(`${API_BASE}/api/regions`)
@@ -93,6 +113,7 @@ export default function App() {
     setRegionData(null);
     setExpandedPaths(new Set());
     setSearchQuery("");
+    setDebouncedQuery("");
 
     fetch(`${API_BASE}/api/regions/${encodeURIComponent(selectedRegion)}`)
       .then((res) => {
@@ -109,10 +130,15 @@ export default function App() {
       });
   }, [selectedRegion]);
 
-  const searchExpanded = useMemo(() => {
-    if (!regionData || !searchQuery.trim()) return new Set<string>();
-    return findMatchingPaths(regionData.providers, searchQuery.trim());
-  }, [searchQuery, regionData]);
+  const { searchExpanded, matchCount } = useMemo(() => {
+    if (!regionData || !debouncedQuery.trim())
+      return { searchExpanded: new Set<string>(), matchCount: 0 };
+    const result = findMatchingPaths(
+      regionData.providers,
+      debouncedQuery.trim()
+    );
+    return { searchExpanded: result.expandPaths, matchCount: result.matchCount };
+  }, [debouncedQuery, regionData]);
 
   const isExpanded = useCallback(
     (path: string) => expandedPaths.has(path) || searchExpanded.has(path),
@@ -146,6 +172,9 @@ export default function App() {
     return providers;
   }, [regionData, showAvailableOnly]);
 
+  const hasActiveSearch = debouncedQuery.trim().length > 0;
+  const noResults = hasActiveSearch && matchCount === 0 && regionData !== null;
+
   return (
     <>
       <Header
@@ -158,6 +187,8 @@ export default function App() {
         onToggleAvailable={() => setShowAvailableOnly((v) => !v)}
         onExpandAll={expandAll}
         onCollapseAll={collapseAll}
+        matchCount={matchCount}
+        hasActiveSearch={hasActiveSearch}
       />
       {regionData && (
         <div className="status-bar">
@@ -177,13 +208,18 @@ export default function App() {
       {!loading && !error && !selectedRegion && (
         <div className="empty-state">Select a region to view resource providers.</div>
       )}
-      {!loading && !error && regionData && (
+      {!loading && !error && regionData && noResults && (
+        <div className="empty-state">
+          No results found for &ldquo;{debouncedQuery.trim()}&rdquo;
+        </div>
+      )}
+      {!loading && !error && regionData && !noResults && (
         <ResourceTree
           providers={visibleProviders}
           isExpanded={isExpanded}
           onTogglePath={togglePath}
           showAvailableOnly={showAvailableOnly}
-          searchQuery={searchQuery}
+          searchQuery={debouncedQuery}
         />
       )}
     </>

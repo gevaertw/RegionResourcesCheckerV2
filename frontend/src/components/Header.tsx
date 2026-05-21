@@ -10,6 +10,8 @@ interface HeaderProps {
   onToggleAvailable: () => void;
   onExpandAll: () => void;
   onCollapseAll: () => void;
+  matchCount: number;
+  hasActiveSearch: boolean;
 }
 
 export default function Header({
@@ -22,6 +24,8 @@ export default function Header({
   onToggleAvailable,
   onExpandAll,
   onCollapseAll,
+  matchCount,
+  hasActiveSearch,
 }: HeaderProps) {
   return (
     <header className="app-header">
@@ -45,12 +49,31 @@ export default function Header({
           </select>
         </div>
         <div className="search-field">
-          <input
-            type="text"
-            placeholder="Search resource providers…"
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-          />
+          <div className="search-input-wrapper">
+            <span className="search-icon">&#128269;</span>
+            <input
+              type="text"
+              placeholder="Search resource providers…"
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+            />
+            {searchQuery && (
+              <button
+                className="search-clear"
+                onClick={() => onSearchChange("")}
+                aria-label="Clear search"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+          {hasActiveSearch && (
+            <span className="search-count">
+              {matchCount === 0
+                ? "No matches"
+                : `${matchCount} match${matchCount !== 1 ? "es" : ""}`}
+            </span>
+          )}
         </div>
         <ToggleSwitch
           active={showAvailableOnly}

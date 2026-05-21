@@ -62,7 +62,6 @@ export async function collectProviders(
   for await (const provider of client.providers.list()) {
     const providerNode: ProviderNode = {
       name: provider.namespace || "",
-      registrationState: provider.registrationState || "Unknown",
       children: [],
     };
 

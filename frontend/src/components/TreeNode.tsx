@@ -16,15 +16,28 @@ function hasAvailableDescendant(node: ResourceNode): boolean {
 
 function highlightText(text: string, query: string): React.ReactNode {
   if (!query) return text;
-  const idx = text.toLowerCase().indexOf(query.toLowerCase());
-  if (idx === -1) return text;
+  const terms = query.split(/\s+/).filter(Boolean);
+  if (terms.length === 0) return text;
+
+  const escaped = terms.map((t) =>
+    t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+  );
+  const pattern = new RegExp(`(${escaped.join("|")})`, "gi");
+  const parts = text.split(pattern);
+  if (parts.length <= 1) return text;
+
+  const matchPattern = new RegExp(`^(?:${escaped.join("|")})$`, "i");
   return (
     <>
-      {text.substring(0, idx)}
-      <span className="highlight">
-        {text.substring(idx, idx + query.length)}
-      </span>
-      {text.substring(idx + query.length)}
+      {parts.map((part, i) =>
+        matchPattern.test(part) ? (
+          <span key={i} className="highlight">
+            {part}
+          </span>
+        ) : (
+          part
+        )
+      )}
     </>
   );
 }

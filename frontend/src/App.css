@@ -74,18 +74,61 @@ body {
 }
 
 /* -- Search -- */
+.search-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.search-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  left: 8px;
+  font-size: 14px;
+  line-height: 1;
+  pointer-events: none;
+}
+
 .search-field input {
-  padding: 6px 12px;
+  padding: 6px 30px 6px 32px;
   border: 1px solid var(--color-border);
   border-radius: 4px;
   font-family: var(--font-family);
   font-size: 14px;
-  width: 260px;
+  width: 340px;
 }
 
 .search-field input:focus {
   outline: none;
   border-color: var(--color-primary);
+}
+
+.search-clear {
+  position: absolute;
+  right: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  padding: 2px 6px;
+  border-radius: 2px;
+  line-height: 1;
+}
+
+.search-clear:hover {
+  background: var(--color-border);
+  color: var(--color-text);
+}
+
+.search-count {
+  font-size: 11px;
+  color: var(--color-text-secondary);
 }
 
 /* -- Toggle switch (iOS style) -- */
@@ -222,23 +265,6 @@ body {
   padding-left: 20px;
 }
 
-.provider-badge {
-  font-size: 11px;
-  padding: 1px 6px;
-  border-radius: 3px;
-  margin-left: 8px;
-  font-weight: 600;
-}
-
-.provider-badge.registered {
-  background: #dff6dd;
-  color: var(--color-success);
-}
-
-.provider-badge.not-registered {
-  background: #fde7e9;
-  color: var(--color-danger);
-}
 
 /* -- States -- */
 .loading,
