@@ -50,3 +50,9 @@ GUI -> Middle Tier -> Storage
 - Make sure that if there are no infra changes, the infra deployment is not triggered, its a waste of time
 - Store all parameters required for deployment in a project parameters.json file, keep secrets in a secrets.json file
 - Container images are stored in a ACR
+
+# rework 01
+currently the GUI looks ok but the information is not displyed right:
+- Do not mention if providers are registered or not, its not relevant and its bound to a subscription
+- The buton to show only available only works on the first level, it should work in the entire tree
+- The search bar is low quality, results are crap, add a decent search component
