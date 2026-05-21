@@ -7,6 +7,8 @@ interface ResourceTreeProps {
   onTogglePath: (path: string) => void;
   showAvailableOnly: boolean;
   searchQuery: string;
+  searchFilterActive: boolean;
+  matchedPaths: Set<string>;
 }
 
 function hasAvailableDescendant(node: ResourceNode): boolean {
@@ -52,14 +54,20 @@ export default function ResourceTree({
   onTogglePath,
   showAvailableOnly,
   searchQuery,
+  searchFilterActive,
+  matchedPaths,
 }: ResourceTreeProps) {
   if (providers.length === 0) {
     return <div className="empty-state">No resource providers to display.</div>;
   }
 
+  const filteredProviders = searchFilterActive
+    ? providers.filter((p) => matchedPaths.has(p.name))
+    : providers;
+
   return (
     <div className="tree-container">
-      {providers.map((provider) => {
+      {filteredProviders.map((provider) => {
         const path = provider.name;
         const expanded = isExpanded(path);
         const isLeaf = provider.children.length === 0;
@@ -89,6 +97,11 @@ export default function ResourceTree({
                     (child) =>
                       !showAvailableOnly || hasAvailableDescendant(child)
                   )
+                  .filter(
+                    (child) =>
+                      !searchFilterActive ||
+                      matchedPaths.has(`${path}/${child.name}`)
+                  )
                   .map((child) => (
                     <TreeNode
                       key={child.name}
@@ -98,6 +111,8 @@ export default function ResourceTree({
                       onTogglePath={onTogglePath}
                       showAvailableOnly={showAvailableOnly}
                       searchQuery={searchQuery}
+                      searchFilterActive={searchFilterActive}
+                      matchedPaths={matchedPaths}
                     />
                   ))}
               </div>

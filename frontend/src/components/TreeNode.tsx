@@ -7,6 +7,8 @@ interface TreeNodeProps {
   onTogglePath: (path: string) => void;
   showAvailableOnly: boolean;
   searchQuery: string;
+  searchFilterActive: boolean;
+  matchedPaths: Set<string>;
 }
 
 function hasAvailableDescendant(node: ResourceNode): boolean {
@@ -49,13 +51,21 @@ export default function TreeNode({
   onTogglePath,
   showAvailableOnly,
   searchQuery,
+  searchFilterActive,
+  matchedPaths,
 }: TreeNodeProps) {
   const expanded = isExpanded(path);
   const isLeaf = node.children.length === 0;
 
-  const visibleChildren = showAvailableOnly
+  let visibleChildren = showAvailableOnly
     ? node.children.filter(hasAvailableDescendant)
     : node.children;
+
+  if (searchFilterActive) {
+    visibleChildren = visibleChildren.filter((child) =>
+      matchedPaths.has(`${path}/${child.name}`)
+    );
+  }
 
   return (
     <div>
@@ -85,6 +95,8 @@ export default function TreeNode({
               onTogglePath={onTogglePath}
               showAvailableOnly={showAvailableOnly}
               searchQuery={searchQuery}
+              searchFilterActive={searchFilterActive}
+              matchedPaths={matchedPaths}
             />
           ))}
         </div>

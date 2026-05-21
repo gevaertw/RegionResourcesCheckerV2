@@ -1,16 +1,20 @@
 :root {
   --color-primary: #0078d4;
   --color-primary-hover: #106ebe;
-  --color-bg: #faf9f8;
+  --color-primary-dark: #005a9e;
+  --color-bg: #f3f2f1;
   --color-surface: #ffffff;
-  --color-border: #edebe9;
+  --color-border: #e1dfdd;
   --color-text: #323130;
   --color-text-secondary: #605e5c;
   --color-success: #107c10;
   --color-danger: #a4262c;
-  --color-highlight: #fff3cd;
+  --color-highlight: #fce8b2;
   --font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, "Roboto",
     "Helvetica Neue", sans-serif;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.12);
+  --radius: 6px;
 }
 
 * {
@@ -27,30 +31,53 @@ body {
   line-height: 1.5;
 }
 
+/* -- App container for sticky footer -- */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.app-container > .status-bar,
+.app-container > .tree-container,
+.app-container > .loading,
+.app-container > .error-msg,
+.app-container > .empty-state {
+  flex: 0 0 auto;
+}
+
+.app-container > .tree-container,
+.app-container > .loading,
+.app-container > .error-msg,
+.app-container > .empty-state:last-of-type {
+  flex: 1 1 auto;
+}
+
 /* -- Header -- */
 .app-header {
-  background-color: var(--color-surface);
-  border-bottom: 1px solid var(--color-border);
+  background: linear-gradient(135deg, #0078d4 0%, #005a9e 100%);
   padding: 16px 24px;
   position: sticky;
   top: 0;
   z-index: 100;
+  box-shadow: var(--shadow-md);
 }
 
 .disclaimer {
   font-size: 12px;
-  color: var(--color-text-secondary);
-  background: #fff4ce;
-  border: 1px solid #f5d67b;
-  border-radius: 4px;
+  color: #323130;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: var(--radius);
   padding: 6px 12px;
   margin-bottom: 12px;
+  backdrop-filter: blur(4px);
 }
 
 .app-title {
   font-size: 20px;
   font-weight: 600;
-  color: var(--color-text);
+  color: #ffffff;
   margin-bottom: 12px;
 }
 
@@ -63,21 +90,30 @@ body {
 
 /* -- Region dropdown -- */
 .region-selector select {
-  padding: 6px 12px;
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
+  padding: 8px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: var(--radius);
   font-family: var(--font-family);
   font-size: 14px;
-  background: white;
+  background: rgba(255, 255, 255, 0.95);
   cursor: pointer;
-  min-width: 180px;
+  min-width: 200px;
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.region-selector select:focus {
+  outline: none;
+  border-color: #ffffff;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.4);
 }
 
 /* -- Search -- */
 .search-field {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
 }
 
 .search-input-wrapper {
@@ -88,24 +124,29 @@ body {
 
 .search-icon {
   position: absolute;
-  left: 8px;
+  left: 10px;
   font-size: 14px;
   line-height: 1;
   pointer-events: none;
+  color: var(--color-text-secondary);
 }
 
 .search-field input {
-  padding: 6px 30px 6px 32px;
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
+  padding: 8px 30px 8px 34px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: var(--radius);
   font-family: var(--font-family);
   font-size: 14px;
-  width: 340px;
+  width: 300px;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 
 .search-field input:focus {
   outline: none;
-  border-color: var(--color-primary);
+  border-color: #ffffff;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.4);
 }
 
 .search-clear {
@@ -127,8 +168,9 @@ body {
 }
 
 .search-count {
-  font-size: 11px;
-  color: var(--color-text-secondary);
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.9);
+  white-space: nowrap;
 }
 
 /* -- Toggle switch (iOS style) -- */
@@ -144,7 +186,7 @@ body {
   position: relative;
   width: 44px;
   height: 24px;
-  background: #bebbb8;
+  background: rgba(255, 255, 255, 0.35);
   border-radius: 12px;
   transition: background-color 0.2s;
   flex-shrink: 0;
@@ -164,7 +206,7 @@ body {
 }
 
 .toggle-switch.active .toggle-track {
-  background: var(--color-primary);
+  background: rgba(255, 255, 255, 0.7);
 }
 
 .toggle-switch.active .toggle-track::after {
@@ -173,30 +215,84 @@ body {
 
 .toggle-label {
   font-size: 13px;
-  color: var(--color-text-secondary);
+  color: rgba(255, 255, 255, 0.95);
 }
 
 /* -- Buttons -- */
 .btn {
-  padding: 6px 16px;
+  padding: 7px 18px;
   border: 1px solid var(--color-border);
-  border-radius: 4px;
+  border-radius: var(--radius);
   background: var(--color-surface);
   font-family: var(--font-family);
   font-size: 13px;
+  font-weight: 500;
   cursor: pointer;
   color: var(--color-text);
-  transition: background 0.15s;
+  transition: background 0.15s, box-shadow 0.15s, border-color 0.15s;
   white-space: nowrap;
 }
 
 .btn:hover {
   background: var(--color-bg);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--color-primary);
+  color: #ffffff;
+  border-color: var(--color-primary);
+}
+
+.btn-primary:hover {
+  background: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-outline {
+  background: var(--color-surface);
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.btn-outline:hover {
+  background: rgba(0, 120, 212, 0.06);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Header buttons override — white styling on dark header */
+.header-controls .btn-group .btn-primary {
+  background: #ffffff;
+  color: var(--color-primary);
+  border-color: #ffffff;
+}
+
+.header-controls .btn-group .btn-primary:hover {
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: var(--shadow-sm);
+}
+
+.header-controls .btn-group .btn-outline {
+  background: transparent;
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+.header-controls .btn-group .btn-outline:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: #ffffff;
+  box-shadow: var(--shadow-sm);
 }
 
 .btn-group {
   display: flex;
-  gap: 4px;
+  gap: 6px;
 }
 
 /* -- Status bar -- */
@@ -216,14 +312,15 @@ body {
 .tree-node-header {
   display: flex;
   align-items: center;
-  padding: 3px 4px;
+  padding: 5px 6px;
   cursor: pointer;
   user-select: none;
-  border-radius: 4px;
+  border-radius: var(--radius);
+  transition: background 0.1s;
 }
 
 .tree-node-header:hover {
-  background: rgba(0, 120, 212, 0.05);
+  background: rgba(0, 120, 212, 0.06);
 }
 
 .tree-chevron {
@@ -232,7 +329,7 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
+  font-size: 22px;
   color: var(--color-text-secondary);
   flex-shrink: 0;
   transition: transform 0.15s;
@@ -259,10 +356,33 @@ body {
   background: var(--color-highlight);
   padding: 0 2px;
   border-radius: 2px;
+  border-bottom: 2px solid #e8a317;
+}
+
+.btn-filter {
+  padding: 5px 12px;
+  font-size: 12px;
+}
+
+.btn-filter:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-filter-active {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+.btn-filter-active:hover {
+  background: var(--color-primary-hover);
 }
 
 .tree-children {
   padding-left: 20px;
+  border-left: 1px solid var(--color-border);
+  margin-left: 9px;
 }
 
 
@@ -297,6 +417,23 @@ body {
   }
 }
 
+/* -- Footer -- */
+.app-footer {
+  text-align: center;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  padding: 16px 24px;
+  border-top: 1px solid var(--color-border);
+  margin-top: auto;
+}
+
+.footer-note {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  opacity: 0.8;
+  margin-top: 4px;
+}
+
 /* -- Responsive -- */
 @media (max-width: 768px) {
   .header-controls {
@@ -304,5 +441,8 @@ body {
   }
   .search-field input {
     width: 100%;
+  }
+  .search-field {
+    flex-wrap: wrap;
   }
 }

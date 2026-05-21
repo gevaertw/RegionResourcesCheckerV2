@@ -87,12 +87,14 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
-  const [showAvailableOnly, setShowAvailableOnly] = useState(false);
+  const [showAvailableOnly, setShowAvailableOnly] = useState(true);
   const [expandedPaths, setExpandedPaths] = useState<Set<string>>(new Set());
+  const [searchFilterActive, setSearchFilterActive] = useState(false);
 
   // Debounce search input by 300ms
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(searchQuery), 300);
+    setSearchFilterActive(false);
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
@@ -114,6 +116,7 @@ export default function App() {
     setExpandedPaths(new Set());
     setSearchQuery("");
     setDebouncedQuery("");
+    setSearchFilterActive(false);
 
     fetch(`${API_BASE}/api/regions/${encodeURIComponent(selectedRegion)}`)
       .then((res) => {
@@ -122,6 +125,12 @@ export default function App() {
       })
       .then((data: RegionData) => {
         setRegionData(data);
+        // Default view: expand 1 level (provider names)
+        const level0 = new Set<string>();
+        for (const prov of data.providers) {
+          if (prov.children.length > 0) level0.add(prov.name);
+        }
+        setExpandedPaths(level0);
         setLoading(false);
       })
       .catch((err) => {
@@ -154,6 +163,39 @@ export default function App() {
     });
   }, []);
 
+  const expandOneLevel = useCallback(() => {
+    if (!regionData) return;
+    setExpandedPaths((prev) => {
+      const next = new Set(prev);
+      const allByDepth: string[][] = [];
+      function walk(children: ResourceNode[], parent: string, depth: number) {
+        for (const child of children) {
+          const p = `${parent}/${child.name}`;
+          if (child.children.length > 0) {
+            if (!allByDepth[depth]) allByDepth[depth] = [];
+            allByDepth[depth].push(p);
+            walk(child.children, p, depth + 1);
+          }
+        }
+      }
+      for (const prov of regionData.providers) {
+        if (prov.children.length > 0) {
+          if (!allByDepth[0]) allByDepth[0] = [];
+          allByDepth[0].push(prov.name);
+          walk(prov.children, prov.name, 1);
+        }
+      }
+      for (const paths of allByDepth) {
+        if (!paths) continue;
+        if (!paths.every((p) => next.has(p))) {
+          paths.forEach((p) => next.add(p));
+          return next;
+        }
+      }
+      return next;
+    });
+  }, [regionData]);
+
   const expandAll = useCallback(() => {
     if (!regionData) return;
     setExpandedPaths(collectAllPaths(regionData.providers));
@@ -162,6 +204,41 @@ export default function App() {
   const collapseAll = useCallback(() => {
     setExpandedPaths(new Set());
   }, []);
+
+  const collapseOneLevel = useCallback(() => {
+    if (!regionData) return;
+    setExpandedPaths((prev) => {
+      const next = new Set(prev);
+      const allByDepth: string[][] = [];
+      function walk(children: ResourceNode[], parent: string, depth: number) {
+        for (const child of children) {
+          const p = `${parent}/${child.name}`;
+          if (child.children.length > 0) {
+            if (!allByDepth[depth]) allByDepth[depth] = [];
+            allByDepth[depth].push(p);
+            walk(child.children, p, depth + 1);
+          }
+        }
+      }
+      for (const prov of regionData.providers) {
+        if (prov.children.length > 0) {
+          if (!allByDepth[0]) allByDepth[0] = [];
+          allByDepth[0].push(prov.name);
+          walk(prov.children, prov.name, 1);
+        }
+      }
+      // Find deepest expanded depth and collapse it
+      for (let d = allByDepth.length - 1; d >= 0; d--) {
+        const paths = allByDepth[d];
+        if (!paths) continue;
+        if (paths.some((p) => next.has(p))) {
+          paths.forEach((p) => next.delete(p));
+          return next;
+        }
+      }
+      return next;
+    });
+  }, [regionData]);
 
   const visibleProviders = useMemo(() => {
     if (!regionData) return [];
@@ -176,7 +253,7 @@ export default function App() {
   const noResults = hasActiveSearch && matchCount === 0 && regionData !== null;
 
   return (
-    <>
+    <div className="app-container">
       <Header
         regions={regions}
         selectedRegion={selectedRegion}
@@ -185,10 +262,14 @@ export default function App() {
         onSearchChange={setSearchQuery}
         showAvailableOnly={showAvailableOnly}
         onToggleAvailable={() => setShowAvailableOnly((v) => !v)}
+        onExpandOneLevel={expandOneLevel}
         onExpandAll={expandAll}
+        onCollapseOneLevel={collapseOneLevel}
         onCollapseAll={collapseAll}
         matchCount={matchCount}
         hasActiveSearch={hasActiveSearch}
+        searchFilterActive={searchFilterActive}
+        onToggleSearchFilter={() => setSearchFilterActive((v) => !v)}
       />
       {regionData && (
         <div className="status-bar">
@@ -220,8 +301,14 @@ export default function App() {
           onTogglePath={togglePath}
           showAvailableOnly={showAvailableOnly}
           searchQuery={debouncedQuery}
+          searchFilterActive={searchFilterActive}
+          matchedPaths={searchExpanded}
         />
       )}
-    </>
+      <footer className="app-footer">
+        <div>Vibecoded with ❤️ and GitHub Copilot</div>
+        <div className="footer-note">This app only shows regional services. Global services like Front Door are not shown.</div>
+      </footer>
+    </div>
   );
 }
