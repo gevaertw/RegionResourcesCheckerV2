@@ -79,7 +79,11 @@ currently the GUI looks ok but the information is not displyed right:
 - there are some meaningless sub resources in the tree, the are (take these string literaly) "operations", "locations" and "usages".  Filter those out of the results, also filter out resources on the levels lower than these
 
 # Add VM lists
-we are gooing to add VMs to the app onn a new window
-- extend the existing infrastructure components 
-use exactly the same look and feel as for the resources
-- 
+we are gooing to add VMs to the app 
+- We will be dooing this on a new page, so the top menu should have a button to switch between resources and VMs
+- Use exactly the same look and feel as for the resources
+- Put the VM data in separated json files on the storage account, again separated by region
+- Group VMs by Family, inside the group order by subtype
+- For each subtype list all available sizes, the amount of Zones the type is available, and finaly the capabilities 
+
+- Group VMs by Family, inside the group order by core count

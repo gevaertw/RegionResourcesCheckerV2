@@ -10,6 +10,8 @@ param location string = resourceGroup().location
 param regions array = [
   'belgiumcentral'
   'denmarkeast'
+  'israelcentral'
+  'israelnorthwest'
 ]
 
 @description('Frontend container image (full reference or MCR placeholder)')

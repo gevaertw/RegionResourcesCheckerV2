@@ -91,7 +91,11 @@ export async function collectVms(
       sizes.sort((a, b) => getVCpus(a) - getVCpus(b));
       subtypes.push({ name: subtypeName, sizes });
     }
-    subtypes.sort((a, b) => a.name.localeCompare(b.name));
+    subtypes.sort((a, b) => {
+      const aMin = a.sizes.length > 0 ? getVCpus(a.sizes[0]) : 0;
+      const bMin = b.sizes.length > 0 ? getVCpus(b.sizes[0]) : 0;
+      return aMin - bMin || a.name.localeCompare(b.name);
+    });
     families.push({ name: familyName, subtypes });
   }
   families.sort((a, b) => a.name.localeCompare(b.name));

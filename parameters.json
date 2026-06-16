@@ -11,7 +11,9 @@
     "regions": {
       "value": [
         "belgiumcentral",
-        "denmarkeast"
+        "denmarkeast",
+        "israelcentral",
+        "israelnorthwest"
       ]
     },
     "frontendImage": {
